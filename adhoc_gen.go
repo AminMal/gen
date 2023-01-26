@@ -112,3 +112,42 @@ func sizedValue(t reflect.Type, size int) (value reflect.Value, ok bool) {
 
 	return v, true
 }
+
+type adhocGen[T any] struct {
+	generatorsByType map[reflect.Type]*WrappedGen
+}
+
+func (g *adhocGen[T]) Generate() T {
+	actual := new(T)
+	tpe := reflect.TypeOf(actual)
+	v := reflect.ValueOf(actual).Elem()
+
+	concrete := tpe.Elem()
+
+	for i := 0; i < concrete.NumField(); i++ {
+		fieldType := concrete.Field(i)
+		if g, found := g.generatorsByType[fieldType.Type]; found {
+			if v.Field(i).CanSet() {
+				v.Field(i).Set(g.vg.Generate())
+				continue
+			}
+		} else {
+			if fieldValue, ok := sizedValue(fieldType.Type, complexSize); ok {
+				if v.Field(i).CanSet() {
+					v.Field(i).Set(fieldValue)
+				}
+			} else {
+				panic(notInferrable(fieldType.Type))
+			}
+		}
+	}
+	return *actual
+}
+
+func (g *adhocGen[T]) GenerateN(n uint) []T {
+	result := make([]T, n, n)
+	for i := uint(0); i < n; i++ {
+		result[i] = g.Generate()
+	}
+	return result
+}
