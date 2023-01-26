@@ -13,7 +13,7 @@ type only[T any] struct {
 
 func (o *only[T]) Generate() T { return o.value }
 
-func (o *only[T]) GenerateN(n uint) []T { 
+func (o *only[T]) GenerateN(n uint) []T {
 	values := make([]T, n, n)
 	for i := uint(0); i < n; i++ {
 		values[i] = o.value
@@ -26,7 +26,7 @@ func Only[T any](value T) Gen[T] {
 }
 
 type oneOf[T any] struct {
-	choices []T
+	choices    []T
 	numChoices int
 }
 
@@ -95,4 +95,3 @@ func Between[T Numeric](min, max T) Gen[T] {
 	actualMax := numericMax(min, max)
 	return &between[T]{actualMin, actualMax}
 }
-
