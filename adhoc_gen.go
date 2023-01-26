@@ -3,6 +3,8 @@ package gen
 import (
 	"math/rand"
 	"reflect"
+	"fmt"
+	"strings"
 )
 
 var complexSize = 50
@@ -151,3 +153,55 @@ func (g *adhocGen[T]) GenerateN(n uint) []T {
 	}
 	return result
 }
+
+func getFunctionSignature(ft reflect.Type) string {
+	ins := []string{}
+	outs := []string{}
+	for i := 0; i < ft.NumIn(); i++ {
+		in := ft.In(i).Name()
+		if in == "" {
+			in = "any"
+		}
+		ins = append(ins, in)
+	}
+	for i := 0; i < ft.NumOut(); i++ {
+		out := ft.Out(i).Name()
+		if out == "" {
+			out = "any"
+		}
+		outs = append(outs, out)
+	}
+
+	return fmt.Sprintf("(%s) => (%s)", strings.Join(ins, ", "), strings.Join(outs, ", "))
+}
+
+func notInferrable(t reflect.Type) error {
+	switch t.Kind() {
+	case reflect.Func:
+		return fmt.Errorf("cannot infer functions yet: %s", getFunctionSignature(t))
+	default:
+		return fmt.Errorf("cannot infer `%s` yet", t)
+	}
+}
+
+func Infer[T any](valueGenerators ...*WrappedGen) (Gen[T], error) {
+	tpe := reflect.TypeOf(*new(T))
+
+	valueGeneratorsByType := make(map[reflect.Type]*WrappedGen)
+
+	for _, vg := range valueGenerators {
+		valueGeneratorsByType[vg.tpe] = vg
+	}
+
+	for i := 0; i < tpe.NumField(); i++ {
+		if tpe.Field(i).Type.Kind() == reflect.Func {
+			return nil, notInferrable(tpe.Field(i).Type)
+		}
+	}
+
+	if tpe.Kind() == reflect.Func {
+		return nil, notInferrable(tpe)
+	}
+	return &adhocGen[T]{valueGeneratorsByType}, nil
+}
+
