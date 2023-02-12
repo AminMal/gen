@@ -1,11 +1,11 @@
 package gen
 
 import (
-	"testing"
 	"fmt"
+	"testing"
 )
 
-type genWithPanicSideEffect[T any] struct {}
+type genWithPanicSideEffect[T any] struct{}
 
 func (genWithPanicSideEffect[T]) Generate() T {
 	panic("I'm supposed to panic")
@@ -15,15 +15,18 @@ func (genWithPanicSideEffect[T]) GenerateN(n uint) []T {
 	panic(fmt.Sprintf("I'm supposed to panic %d times", n))
 }
 
-type Person struct { Name string; Age int }
+type Person struct {
+	Name string
+	Age  int
+}
 
 func TestLazyGenBeingAnEffect(t *testing.T) {
 
 	var nameGen Gen[string] = genWithPanicSideEffect[string]{}
 	var ageGen Gen[int] = genWithPanicSideEffect[int]{}
 
-	_ = UsingGen(nameGen, func (name string) Gen[Person] {
-		return Using(ageGen, func (age int) Person {
+	_ = UsingGen(nameGen, func(name string) Gen[Person] {
+		return Using(ageGen, func(age int) Person {
 			return Person{name, age}
 		})
 	})
@@ -36,13 +39,13 @@ func TestComposedOnlyGenBeingOnly(t *testing.T) {
 	nameGen := Only("John")
 	ageGen := Only(42)
 
-	personGen := UsingGen(nameGen, func (name string) Gen[Person] {
-		return Using(ageGen, func (age int) Person {
+	personGen := UsingGen(nameGen, func(name string) Gen[Person] {
+		return Using(ageGen, func(age int) Person {
 			return Person{name, age}
 		})
 	})
 
-	expected := Person {"John", 42}
+	expected := Person{"John", 42}
 
 	for _, person := range personGen.GenerateN(100) {
 		if person != expected {

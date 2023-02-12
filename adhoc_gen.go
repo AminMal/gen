@@ -1,9 +1,9 @@
 package gen
 
 import (
+	"fmt"
 	"math/rand"
 	"reflect"
-	"fmt"
 	"strings"
 )
 
@@ -204,4 +204,3 @@ func Infer[T any](valueGenerators ...*WrappedGen) (Gen[T], error) {
 	}
 	return &adhocGen[T]{valueGeneratorsByType}, nil
 }
-

@@ -37,7 +37,7 @@ func isBetween(num, actualMin, actualMax int) bool {
 }
 
 func TestBetween(t *testing.T) {
-	min := 100000 // this is intentional
+	min := 100000  // this is intentional
 	max := -790832 // this is intentional
 	g := Between(min, max)
 
@@ -63,7 +63,7 @@ func TestBetweenWithOnePossibility(t *testing.T) {
 }
 
 func TestOneOfWithOnePossibility(t *testing.T) {
-	type Human struct { Name string }
+	type Human struct{ Name string }
 	onlyPossibility := Human{"John"}
 
 	choices := OneOf(onlyPossibility)
