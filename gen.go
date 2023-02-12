@@ -57,29 +57,29 @@ func (r *between[T]) Generate() T {
 	// todo, the below line causes subtraction overflow, fix it
 	switch diff := any(r.max - r.min).(type) {
 	case uint8:
-		return any(randUint8(diff)).(T) + r.min
+		return T(randUint8(diff) + uint8(r.min))
 	case uint16:
-		return any(randUint16(diff)).(T) + r.min
+		return T(randUint16(diff) + uint16(r.min))
 	case uint32:
-		return any(randUint32(diff)).(T) + r.min
+		return T(randUint32(diff) + uint32(r.min))
 	case uint64:
-		return any(randUint64(diff)).(T) + r.min
+		return T(randUint64(diff) + uint64(r.min))
 	case uint:
-		return any(randUint(diff)).(T) + r.min
+		return T(randUint(diff) + uint(r.min))
 	case int8:
-		return any(randInt8(diff)).(T) + r.min
+		return T(randInt8(diff) + int8(r.min))
 	case int16:
-		return any(randInt16(diff)).(T) + r.min
+		return T(randInt16(diff) + int16(r.min))
 	case int32:
-		return any(randInt32(diff)).(T) + r.min
+		return T(randInt32(diff) + int32(r.min))
 	case int64:
-		return any(randInt64(diff)).(T) + r.min
+		return T(randInt64(diff) + int64(r.min))
 	case int:
-		return any(randInt(diff)).(T) + r.min
+		return T(randInt(diff) + int(r.min))
 	case float32:
-		return any(randFloat32(diff)).(T) + r.min
+		return T(randFloat32(diff) + float32(r.min))
 	case float64:
-		return any(randFloat64(diff)).(T) + r.min
+		return T(randFloat64(diff) + float64(r.min))
 	default:
 		panic(fmt.Errorf("match error: unrecognized Numeric type %t", diff))
 	}
