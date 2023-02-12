@@ -173,16 +173,6 @@ type TestPerson struct {
 	Age 		int
 }
 
-type quickPersonGen struct {
-	nameGen, surnameGen, ageGen quick.Generator
-}
-
-func (qpg quickPersonGen) Generate(rand *rand.Rand, size int) reflect.Value {
-	return reflect.ValueOf(
-		TestPerson{qpg.nameGen.Generate(random, 50).String(), qpg.surnameGen.Generate(random, 50).String(), int(qpg.ageGen.Generate(random, 50).Int())},
-	)
-}
-
 func BenchmarkComposition(b *testing.B) {
 
 	nameChoices := []string{"John", "Bob", "Alice", "Anne", "Sherlock", "Jack", "Ross", "Brian"}
@@ -199,7 +189,7 @@ func BenchmarkComposition(b *testing.B) {
 
 	inferedG, _ := Infer[TestPerson](Wrap(OneOf(nameChoices)), Wrap(Only(age)))
 	
-	b.Run("gen-composition", func(b *testing.B) {
+	b.Run("gen-composition-functional", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			g.Generate()
 		}
@@ -208,6 +198,49 @@ func BenchmarkComposition(b *testing.B) {
 	b.Run("gen-infered-composition", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			inferedG.Generate()
+		}
+	})
+}
+
+type personGen struct {
+	nameGen, surnameGen Gen[string]
+	ageGen 	Gen[int]
+}
+
+func (pg *personGen) Generate() TestPerson {
+	return TestPerson{pg.nameGen.Generate(), pg.surnameGen.Generate(), pg.ageGen.Generate()}
+}
+
+// we don't need it
+func (pg *personGen) GenerateN(n uint) []TestPerson { return []TestPerson{} }
+
+type quickPersonGen struct {
+	nameGen, surnameGen, ageGen quick.Generator
+}
+
+func (qpg quickPersonGen) Generate(rand *rand.Rand, size int) reflect.Value {
+	return reflect.ValueOf(
+		TestPerson{qpg.nameGen.Generate(random, 50).String(), qpg.surnameGen.Generate(random, 50).String(), int(qpg.ageGen.Generate(random, 50).Int())},
+	)
+}
+
+func BenchmarkComposition2(b *testing.B) {
+	names := []string{"John", "Jack", "Beth", "Anne", "Freddie", "Ross", "Rachel", "Tom"}
+	surnames := []string{"Smith", "Hart", "Lauren", "Marry", "Simpson", "Geller", "Hanks", "Mercury"}
+	age := 42
+
+	g := &personGen{OneOf(names...), OneOf(surnames...), Only(age)}
+	qg := &quickPersonGen{&quickOneOf[string]{names, len(names)}, &quickOneOf[string]{surnames, len(surnames)}, &quickOnly[int]{age}}
+
+	b.Run("gen-composition", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			g.Generate()
+		}
+	})
+
+	b.Run("quick-composition", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_ = qg.Generate(random, 50).Interface().(TestPerson)
 		}
 	})
 }

@@ -184,3 +184,21 @@ Gen uses `math/rand` to arbitrarily create random values under the hood, so it a
 gen.Seed(int64(6897235))
 ```
 Gen uses current unix millis by default.
+
+## Benchmarks ##
+There are several benchmarks, some of them compare `gen.Gen` with `quick.Generator`, some of them compare different approaches to the same goal in gen, and there's also a pretty good coverage of default generators. You can take a look at `gen_test.go` for the implementations:
+```goos: darwin
+goarch: arm64
+pkg: gen
+BenchmarkOnly/gen-only-8  	1000000000	         0.9516 ns/op	       0 B/op	       0 allocs/op
+BenchmarkOnly/quick-only-8         	300832020	         4.038 ns/op	       0 B/op	       0 allocs/op
+BenchmarkBetween/gen-between-8     	80103466	        14.34 ns/op	       8 B/op	       1 allocs/op
+BenchmarkBetween/quick-between-8   	84020374	        14.19 ns/op	       8 B/op	       0 allocs/op
+BenchmarkOneOf/gen-one-of-8        	958399785	         1.254 ns/op	       0 B/op	       0 allocs/op
+BenchmarkOneOf/quick-one-of-8      	74034469	        15.88 ns/op	       5 B/op	       0 allocs/op
+BenchmarkComposition/gen-composition-functional-8         	 7235749	       165.1 ns/op	     192 B/op	       6 allocs/op
+BenchmarkComposition/gen-infered-composition-8            	  603763	      1975 ns/op	    1699 B/op	     107 allocs/op
+BenchmarkComposition2/gen-composition-8                   	95466342	        12.61 ns/op	       0 B/op	       0 allocs/op
+BenchmarkComposition2/quick-composition-8                 	14833050	        81.80 ns/op	      80 B/op	       3 allocs/op
+
+```
