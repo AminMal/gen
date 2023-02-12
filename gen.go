@@ -43,7 +43,9 @@ func (o *oneOf[T]) GenerateN(n uint) []T {
 }
 
 func OneOf[T any](values ...T) Gen[T] {
-	if len(values) == 1 { return Only(values[0]) }
+	if len(values) == 1 {
+		return Only(values[0])
+	}
 	return &oneOf[T]{values, len(values)}
 }
 
@@ -92,7 +94,9 @@ func (r *between[T]) GenerateN(n uint) []T {
 }
 
 func Between[T Numeric](min, max T) Gen[T] {
-	if min == max { return Only(min) }
+	if min == max {
+		return Only(min)
+	}
 	actualMin := numericMin(min, max)
 	actualMax := numericMax(min, max)
 	return &between[T]{actualMin, actualMax}
