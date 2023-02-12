@@ -1,7 +1,10 @@
 package gen
 
 import (
+	"math/rand"
+	"reflect"
 	"testing"
+	"testing/quick"
 )
 
 func TestOnly(t *testing.T) {
@@ -72,4 +75,139 @@ func TestOneOfWithOnePossibility(t *testing.T) {
 			t.Fatal("OneOf did not act as Only when only one possibility exists")
 		}
 	}
+}
+
+type quickOnly[T any] struct {
+	value T
+}
+
+func (qo *quickOnly[T]) Generate(rand *rand.Rand, size int) reflect.Value {
+	return reflect.ValueOf(qo.value)
+}
+
+func BenchmarkOnly(b *testing.B) {
+	value := 42
+	o := Only(value)
+	var qo quick.Generator = &quickOnly[int]{value}
+
+	b.Run("gen-only", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			o.Generate()
+		}
+	})
+
+	b.Run("quick-only", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			qo.Generate(random, 50).Int()
+		}
+	})
+}
+
+type quickBetween[T Numeric] struct {
+	start, end int
+}
+
+// This is a much-simpler implementation of Between, so it makes sense if it can compete with gen's Between
+func (qb *quickBetween[T]) Generate(rand *rand.Rand, size int) reflect.Value {
+	return reflect.ValueOf(
+		rand.Intn(int(qb.end - qb.start)) + qb.start,
+	)
+}
+
+func BenchmarkBetween(b *testing.B) {
+
+	start := 1
+	end := 100000000
+	
+	g := Between(start, end)
+	var qb quick.Generator = &quickBetween[int]{start, end}
+
+	b.Run("gen-between", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			g.Generate()
+		}
+	})
+
+	b.Run("quick-between", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			qb.Generate(random, 50).Int()
+		}
+	})
+}
+
+type quickOneOf[T any] struct {
+	slice []T
+	length int
+}
+
+func (qo *quickOneOf[T]) Generate(rand *rand.Rand, size int) reflect.Value {
+	index := rand.Intn(qo.length)
+	return reflect.ValueOf(qo.slice[index])
+}
+
+func BenchmarkOneOf(b *testing.B) {
+	slice := make([]int, 1000)
+	for i := 0; i < 1000; i++ {
+		slice[i] = i
+	}
+
+	g := OneOf(slice)
+	var qo quick.Generator = &quickOneOf[int]{slice, len(slice)}
+
+	b.Run("gen-one-of", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			g.Generate()
+		}
+	})
+
+	b.Run("quick-one-of", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			qo.Generate(random, 50).Int()
+		}
+	})
+}
+
+type TestPerson struct {
+	Name 		string
+	Surname 	string
+	Age 		int
+}
+
+type quickPersonGen struct {
+	nameGen, surnameGen, ageGen quick.Generator
+}
+
+func (qpg quickPersonGen) Generate(rand *rand.Rand, size int) reflect.Value {
+	return reflect.ValueOf(
+		TestPerson{qpg.nameGen.Generate(random, 50).String(), qpg.surnameGen.Generate(random, 50).String(), int(qpg.ageGen.Generate(random, 50).Int())},
+	)
+}
+
+func BenchmarkComposition(b *testing.B) {
+
+	nameChoices := []string{"John", "Bob", "Alice", "Anne", "Sherlock", "Jack", "Ross", "Brian"}
+	surnameChoices := []string{"Cole", "Dylan", "Chains", "Marry", "Holmes", "Black", "Geller", "UNKNOWN"}
+	age := 20
+
+	g := UsingGen(OneOf(nameChoices...), func(name string) Gen[TestPerson] {
+		return UsingGen(OneOf(surnameChoices...), func (surname string) Gen[TestPerson] {
+			return Using(Only(age), func(age int) TestPerson {
+				return TestPerson{name, surname, age}
+			})
+		})
+	})
+
+	inferedG, _ := Infer[TestPerson](Wrap(OneOf(nameChoices)), Wrap(Only(age)))
+	
+	b.Run("gen-composition", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			g.Generate()
+		}
+	})
+
+	b.Run("gen-infered-composition", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			inferedG.Generate()
+		}
+	})
 }

@@ -162,6 +162,15 @@ personGen := gen.UsingGen(nameGen, func (name string) gen.Gen[Person] {
 ```
 2- In the current version of the library, some types are not **yet** supported, like functions!
 
+Here's also a benchmark of these 2, using the same `Person` struct:
+```
+goos: darwin
+goarch: arm64
+pkg: gen
+BenchmarkComposition/gen-composition-8         	 6094166	       164.6 ns/op	     192 B/op	       6 allocs/op
+BenchmarkComposition/gen-infered-composition-8 	  582614	        1979 ns/op	    1699 B/op	     107 allocs/op
+```
+
 ## Arbitrary Values ##
 Generating arbitrary values is so common, that gen already has some arbitrary generators for most-common language types. There are arbitrary generators for these types:
 ```
