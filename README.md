@@ -54,6 +54,40 @@ times := timeGen.GenerateN(10)
 // will generate 10 time.Time instances in the given interval
 ```
 
+## Sequential ##
+`Sequential` is yet another generator, which can sequentially generate `Numeric` values, meaning that it holds an internal state of the current value. It's basically a `Range` data-type (sort of), and in case it exceeds the maximum amount of the range, it continues from the start:
+```go
+from := 1
+to := 100
+step := 2
+seq := Sequential(from, to, step)
+
+a := seq.Generate()
+b := seq.Generate()
+c := seq.GenerateN(3)
+
+fmt.Printf("a = %d, b = %d, c = %v\n", a, b, c)
+// prints a = 1, b = 3, c = [5, 7]
+```
+Much like what we had for `Between`, we also have a `TimeSeq` which is the exact same thing as `Sequential`, but for `time.Time`.
+
+## TimeSeq ##
+`TimeSeq` is basically just the same as `Sequential`, but it's designed for `time.Time`. An important difference to note is that since there's no specific unit for `time.Duration`, the calculations for when the range overflows might differ from `Sequential[Numeric]`:
+```go
+now := time.Now()
+start := now.Add(-10 * 24 * time.Hour)
+end := now.Plus(10 * 24 * time.Hour)
+step := 24 * time.Hour
+
+g := TimeSeq(start, end, step)
+for _, t := range g.GenerateN(5) {
+    fmt.Println(t.Format("2006-01-02"))
+}
+// prints 5 consecutive days, starting from today
+fmt.Println(g.Generate().Format("2006-01-02"))
+// prints 6th day after today
+```
+
 # Composition #
 Being able to generate simple values is not just enough, imagine given a struct below:
 ```go
