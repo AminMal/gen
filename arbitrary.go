@@ -52,14 +52,6 @@ func (s *stringGen) Generate() string {
 	return string(rs)
 }
 
-func (s *stringGen) GenerateN(n uint) []string {
-	res := make([]string, n)
-	for i := uint(0); i < n; i++ {
-		res[i] = s.Generate()
-	}
-	return res
-}
-
 // StringGen is a string generator that generates random strings using the given alphabet and minLength and maxLength.
 func StringGen(alphabet string, minLength uint, maxLength uint) Gen[string] {
 	actualMin := numericMin(minLength, maxLength)

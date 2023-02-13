@@ -211,9 +211,6 @@ func (pg *personGen) Generate() TestPerson {
 	return TestPerson{pg.nameGen.Generate(), pg.surnameGen.Generate(), pg.ageGen.Generate()}
 }
 
-// we don't need it
-func (pg *personGen) GenerateN(n uint) []TestPerson { return []TestPerson{} }
-
 type quickPersonGen struct {
 	nameGen, surnameGen, ageGen quick.Generator
 }

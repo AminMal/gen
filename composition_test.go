@@ -1,7 +1,6 @@
 package gen
 
 import (
-	"fmt"
 	"testing"
 )
 
@@ -9,10 +8,6 @@ type genWithPanicSideEffect[T any] struct{}
 
 func (genWithPanicSideEffect[T]) Generate() T {
 	panic("I'm supposed to panic")
-}
-
-func (genWithPanicSideEffect[T]) GenerateN(n uint) []T {
-	panic(fmt.Sprintf("I'm supposed to panic %d times", n))
 }
 
 type Person struct {
