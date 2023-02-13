@@ -25,6 +25,8 @@ func (s *seq[T]) GenerateN(n uint) []T {
 	return res
 }
 
+// Sequential is a sequential generator that holds the current state of the generator.
+// It will generate numerics, between `from` and `to` (inclusive), with the given `step` size.
 func Sequential[T Numeric](from, to, step T) Gen[T] {
 	if (from > to && step < 0) || (from < to && step > 0) {
 		return &seq[T]{from, to, step, from}
@@ -58,6 +60,7 @@ func (ts *timeSeq) GenerateN(n uint) []time.Time {
 	return res
 }
 
+// TimeSeq is a sequential time generator, it generates `time.Time`s within the given range and step.
 func TimeSeq(from, to time.Time, step time.Duration) Gen[time.Time] {
 	if (from.After(to) && step < 0) || (from.Before(to) && step > 0) {
 		return &timeSeq{from, to, from, step}

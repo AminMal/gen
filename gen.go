@@ -2,8 +2,12 @@ package gen
 
 import "fmt"
 
+// Gen describes how to generate a value of a specific type `T`.
+// The behavior of the Gen only depends on the structs implementing it.
 type Gen[T any] interface {
+	// Generate generates a single value of type `T`
 	Generate() T
+	// GenerateN generates `n` values of type `T`
 	GenerateN(n uint) []T
 }
 
@@ -21,6 +25,7 @@ func (o *only[T]) GenerateN(n uint) []T {
 	return values
 }
 
+// Only can generate only the value it's given.
 func Only[T any](value T) Gen[T] {
 	return &only[T]{value}
 }
@@ -42,6 +47,8 @@ func (o *oneOf[T]) GenerateN(n uint) []T {
 	return values
 }
 
+// OneOf picks out a value among those values that it's given.
+// If the values contain only one element, it returns an Only generator.
 func OneOf[T any](values ...T) Gen[T] {
 	if len(values) == 1 {
 		return Only(values[0])
@@ -93,6 +100,9 @@ func (r *between[T]) GenerateN(n uint) []T {
 	return res
 }
 
+// Between generates values within the given range.
+// The order of the parameters doesn't actually matter, but it's more convenient to pass them properly.
+// If max equals min, it returns an Only generator
 func Between[T Numeric](min, max T) Gen[T] {
 	if min == max {
 		return Only(min)

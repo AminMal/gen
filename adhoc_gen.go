@@ -184,6 +184,9 @@ func notInferrable(t reflect.Type) error {
 	}
 }
 
+// Infer can infer generators for the given type parameter `T`, using the given wrapped generators.
+// In case if the type T contains functions or types that gen's adhoc does not currently support,
+// it returns an error, and if not, it returns the generator.
 func Infer[T any](valueGenerators ...*WrappedGen) (Gen[T], error) {
 	tpe := reflect.TypeOf(*new(T))
 
