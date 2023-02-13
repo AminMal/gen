@@ -1,6 +1,6 @@
 package gen
 
-// todo, add support for complex numbers
+// Numeric represents numeric types constraint.
 type Numeric interface {
 	uint8 | uint16 | uint32 | uint64 | uint | int8 | int16 | int32 | int64 | int | float32 | float64
 }

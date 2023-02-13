@@ -20,6 +20,7 @@ func (t timeBetween) GenerateN(n uint) []time.Time {
 	return res
 }
 
+// TimeBetween is a generator for `time.Time` that will generate random `time.Time`s between the given start and end.
 func TimeBetween(start time.Time, end time.Time) Gen[time.Time] {
 	if start.Equal(end) {
 		return Only(start)
