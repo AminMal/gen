@@ -48,16 +48,8 @@ type stringGen struct {
 
 func (s *stringGen) Generate() string {
 	strlen := Between(s.minLength, s.maxLength).Generate()
-	rs := OneOf(s.alphabet...).GenerateN(uint(strlen))
+	rs := GenerateN(OneOf(s.alphabet...), uint(strlen))
 	return string(rs)
-}
-
-func (s *stringGen) GenerateN(n uint) []string {
-	res := make([]string, n)
-	for i := uint(0); i < n; i++ {
-		res[i] = s.Generate()
-	}
-	return res
 }
 
 // StringGen is a string generator that generates random strings using the given alphabet and minLength and maxLength.

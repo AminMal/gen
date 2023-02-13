@@ -7,8 +7,6 @@ import "fmt"
 type Gen[T any] interface {
 	// Generate generates a single value of type `T`
 	Generate() T
-	// GenerateN generates `n` values of type `T`
-	GenerateN(n uint) []T
 }
 
 type only[T any] struct {
@@ -16,14 +14,6 @@ type only[T any] struct {
 }
 
 func (o *only[T]) Generate() T { return o.value }
-
-func (o *only[T]) GenerateN(n uint) []T {
-	values := make([]T, n, n)
-	for i := uint(0); i < n; i++ {
-		values[i] = o.value
-	}
-	return values
-}
 
 // Only can generate only the value it's given.
 func Only[T any](value T) Gen[T] {
@@ -37,14 +27,6 @@ type oneOf[T any] struct {
 
 func (o *oneOf[T]) Generate() T {
 	return o.choices[random.Intn(o.numChoices)]
-}
-
-func (o *oneOf[T]) GenerateN(n uint) []T {
-	values := make([]T, n, n)
-	for i := uint(0); i < n; i++ {
-		values[i] = o.Generate()
-	}
-	return values
 }
 
 // OneOf picks out a value among those values that it's given.
@@ -90,14 +72,6 @@ func (r *between[T]) Generate() T {
 	default:
 		panic(fmt.Errorf("match error: unrecognized Numeric type %t", diff))
 	}
-}
-
-func (r *between[T]) GenerateN(n uint) []T {
-	res := make([]T, n)
-	for i := uint(0); i < n; i++ {
-		res[i] = r.Generate()
-	}
-	return res
 }
 
 // Between generates values within the given range.

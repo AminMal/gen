@@ -16,15 +16,6 @@ func (s *seq[T]) Generate() T {
 	return current
 }
 
-func (s *seq[T]) GenerateN(n uint) []T {
-	res := make([]T, n, n)
-	for i := uint(0); i < n; i++ {
-		// todo, inline Generate here?
-		res[i] = s.Generate()
-	}
-	return res
-}
-
 // Sequential is a sequential generator that holds the current state of the generator.
 // It will generate numerics, between `from` and `to` (inclusive), with the given `step` size.
 func Sequential[T Numeric](from, to, step T) Gen[T] {
@@ -50,14 +41,6 @@ func (ts *timeSeq) Generate() time.Time {
 	}
 	ts.current = ts.current.Add(ts.step)
 	return current
-}
-
-func (ts *timeSeq) GenerateN(n uint) []time.Time {
-	res := make([]time.Time, n, n)
-	for i := uint(0); i < n; i++ {
-		res[i] = ts.Generate()
-	}
-	return res
 }
 
 // TimeSeq is a sequential time generator, it generates `time.Time`s within the given range and step.

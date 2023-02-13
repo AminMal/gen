@@ -146,14 +146,6 @@ func (g *adhocGen[T]) Generate() T {
 	return *actual
 }
 
-func (g *adhocGen[T]) GenerateN(n uint) []T {
-	result := make([]T, n, n)
-	for i := uint(0); i < n; i++ {
-		result[i] = g.Generate()
-	}
-	return result
-}
-
 func getFunctionSignature(ft reflect.Type) string {
 	ins := []string{}
 	outs := []string{}

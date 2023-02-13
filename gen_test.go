@@ -11,7 +11,7 @@ func TestOnly(t *testing.T) {
 	expected := 2
 	g := Only(expected)
 
-	for _, value := range g.GenerateN(100) {
+	for _, value := range GenerateN(g, 100) {
 		if value != expected {
 			t.Fatalf("only returned unexpected value. expected: %d, actual: %d", expected, value)
 		}
@@ -28,7 +28,7 @@ func TestOneOf(t *testing.T) {
 		possibilitiesLookup[p] = struct{}{}
 	}
 
-	for _, value := range g.GenerateN(100) {
+	for _, value := range GenerateN(g, 100) {
 		if _, exists := possibilitiesLookup[value]; !exists {
 			t.Fatalf("OneOf returned %s which was not in the possibilities", value)
 		}
@@ -47,7 +47,7 @@ func TestBetween(t *testing.T) {
 	actualMin := max
 	actualMax := min
 
-	for _, value := range g.GenerateN(100) {
+	for _, value := range GenerateN(g, 100) {
 		if !isBetween(value, actualMin, actualMax) {
 			t.Fatalf("%d is not actually between %d and %d", value, actualMin, actualMax)
 		}
@@ -58,7 +58,7 @@ func TestBetweenWithOnePossibility(t *testing.T) {
 	amount := 10
 	g := Between(amount, amount)
 
-	for _, value := range g.GenerateN(100) {
+	for _, value := range GenerateN(g, 100) {
 		if value != amount {
 			t.Fatalf("Between with the same arguments did not act as Only")
 		}
@@ -70,7 +70,7 @@ func TestOneOfWithOnePossibility(t *testing.T) {
 	onlyPossibility := Human{"John"}
 
 	choices := OneOf(onlyPossibility)
-	for _, value := range choices.GenerateN(100) {
+	for _, value := range GenerateN(choices, 100) {
 		if value != onlyPossibility {
 			t.Fatal("OneOf did not act as Only when only one possibility exists")
 		}
@@ -210,9 +210,6 @@ type personGen struct {
 func (pg *personGen) Generate() TestPerson {
 	return TestPerson{pg.nameGen.Generate(), pg.surnameGen.Generate(), pg.ageGen.Generate()}
 }
-
-// we don't need it
-func (pg *personGen) GenerateN(n uint) []TestPerson { return []TestPerson{} }
 
 type quickPersonGen struct {
 	nameGen, surnameGen, ageGen quick.Generator

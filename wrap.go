@@ -18,14 +18,6 @@ func (t *valueGen[T]) Generate() reflect.Value {
 	return reflect.ValueOf(t.underlying.Generate())
 }
 
-func (t *valueGen[T]) GenerateN(n uint) []reflect.Value {
-	result := make([]reflect.Value, n, n)
-	for i := uint(0); i < n; i++ {
-		result[i] = t.Generate()
-	}
-	return result
-}
-
 // Wrap wraps around a `Gen` and returns a *WrappedGen.
 func Wrap[T any](g Gen[T]) *WrappedGen {
 	return &WrappedGen{reflect.TypeOf(*new(T)), &valueGen[T]{g}}
