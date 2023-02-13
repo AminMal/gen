@@ -5,11 +5,10 @@ Gen is a random generator library, which is safe (compile-time type checking), m
 Let's take a look at Gen's base components, functions, variables, and "how to extend"!
 
 # Gen interface #
-Gen has a generic interface called `Gen[T]`, it has two methods, one of them is to generate a single value, the other one is to generate a slice of values:
+Gen has a generic interface called `Gen[T]`, it has one resposibility, and that is to generate a value of type `T`:
 ```go
 type Gen[T any] interface {
 	Generate() T
-	GenerateN(n uint) []T
 }
 ```
 The logic behind generating depends on the structs/interfaces implementing this interface. You can create various implementations of it as you wish.
@@ -20,7 +19,7 @@ Now let's take a look at its most common implementations, which already exist:
 `Only` is the most basic generator, as the name declares, it will only generate the value that it's given:
 ```go
 onlyTwo := gen.Only(2)
-values := onlyTwo.GenerateN(10000)
+values := gen.GenerateN(onlyTwo, 10000)
 // values will be a slice, containing 10000 elements, 
 // which all of them have the value of 2
 ```
@@ -52,7 +51,7 @@ The logic is pretty much the same as in `Between`:
 now := time.Now()
 tenDaysAgo := now.Add(-10 * 24 * time.Hour)
 timeGen := gen.TimeBetween(tenDaysAgo, now)
-times := timeGen.GenerateN(10)
+times := gen.GenerateN(timeGen, 10)
 // will generate 10 time.Time instances in the given interval
 ```
 
@@ -66,7 +65,7 @@ seq := Sequential(from, to, step)
 
 a := seq.Generate()
 b := seq.Generate()
-c := seq.GenerateN(3)
+c := gen.GenerateN(seq, 3)
 
 fmt.Printf("a = %d, b = %d, c = %v\n", a, b, c)
 // prints a = 1, b = 3, c = [5, 7]
@@ -82,7 +81,7 @@ end := now.Plus(10 * 24 * time.Hour)
 step := 24 * time.Hour
 
 g := TimeSeq(start, end, step)
-for _, t := range g.GenerateN(5) {
+for _, t := range gen.GenerateN(g, 5) {
     fmt.Println(t.Format("2006-01-02"))
 }
 // prints 5 consecutive days, starting from today
