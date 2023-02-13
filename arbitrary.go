@@ -48,7 +48,7 @@ type stringGen struct {
 
 func (s *stringGen) Generate() string {
 	strlen := Between(s.minLength, s.maxLength).Generate()
-	rs := OneOf(s.alphabet...).GenerateN(uint(strlen))
+	rs := GenerateN(OneOf(s.alphabet...), uint(strlen))
 	return string(rs)
 }
 

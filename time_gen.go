@@ -12,14 +12,6 @@ func (t timeBetween) Generate() time.Time {
 	return t.start.Add(time.Duration(newDuration))
 }
 
-func (t timeBetween) GenerateN(n uint) []time.Time {
-	res := make([]time.Time, n)
-	for i := uint(0); i < n; i++ {
-		res[i] = t.Generate()
-	}
-	return res
-}
-
 // TimeBetween is a generator for `time.Time` that will generate random `time.Time`s between the given start and end.
 func TimeBetween(start time.Time, end time.Time) Gen[time.Time] {
 	if start.Equal(end) {

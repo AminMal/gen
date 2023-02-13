@@ -14,7 +14,7 @@ func TestSeqState(t *testing.T) {
 	s := Sequential(from, to, step)
 
 	take := 59
-	_ = s.GenerateN(uint(take))
+	_ = GenerateN(s, uint(take))
 
 	expected := take + 1
 	actual := s.Generate()
@@ -32,7 +32,7 @@ func TestSeqForZeroStep(t *testing.T) {
 	o := Only(from)
 	take := 50
 
-	if !reflect.DeepEqual(s.GenerateN(uint(take)), o.GenerateN(uint(take))) {
+	if !reflect.DeepEqual(GenerateN(s, uint(take)), GenerateN(o, uint(take))) {
 		t.Errorf("sequential generator with 0 step did not generate only one value")
 	}
 }
@@ -47,7 +47,7 @@ func TestSeqForStepNotInTheSameDirectionAsStartToEndVector(t *testing.T) {
 
 	take := 50
 
-	if !reflect.DeepEqual(s.GenerateN(uint(take)), o.GenerateN(uint(take))) {
+	if !reflect.DeepEqual(GenerateN(s, uint(take)), GenerateN(o, uint(take))) {
 		t.Errorf("sequential generator with step not in the same direction as start to end vector did not generate only one value")
 	}
 }
