@@ -37,6 +37,7 @@ It's useful in many cases, especially when you want to avoid full-randomness, an
 ```go
 type Numeric interface {
 	uint8 | uint16 | uint32 | uint64 | uint | int8 | int16 | int32 | int64 | int | float32 | float64
+}
 ```
 The order of the given arguments to `Between` actually does not matter, but it's always a good practice to code what you actually think of:
 ```go
@@ -88,6 +89,23 @@ for _, t := range gen.GenerateN(g, 5) {
 fmt.Println(g.Generate().Format("2006-01-02"))
 // prints 6th day after today
 ```
+# Implementing generators for custom types (the most basic approach) #
+Well, the most basic approach to create generators for custom types/structs is to create a dedicated struct which does so:
+```go
+type Dog struct {
+    Name, Breed string
+}
+
+type DogGen struct {
+    // You can use field generators here, like a dedicated field that can generate Dog's name:
+    // nameGen gen.Gen[string]
+}
+
+func (dg *DogGen) Generate() Dog {
+    // implement the logic here
+}
+```
+But there are more elegant ways to do so!
 
 # Composition #
 Being able to generate simple values is not just enough, imagine given a struct below:
@@ -183,6 +201,13 @@ Gen uses `math/rand` to arbitrarily create random values under the hood, so it a
 gen.Seed(int64(6897235))
 ```
 Gen uses current unix millis by default.
+
+## Generating multiple values ##
+There's a function in the `gen` package called `GenerateN`, which given a generator, and an unsigned integer, it would generate a slice of values which the generator can generate, with the length of the given integer:
+```go
+var personGen gen.Gen[Person]
+var persons []Person = gen.GenerateN(personGen, 100) // a slice of 100 persons
+```
 
 ## Benchmarks ##
 There are several benchmarks, some of them compare `gen.Gen` with `quick.Generator`, some of them compare different approaches to the same goal in gen, and there's also a pretty good coverage of default generators. You can take a look at `gen_test.go` for the implementations:
