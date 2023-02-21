@@ -9,6 +9,15 @@ type Gen[T any] interface {
 	Generate() T
 }
 
+type pure[K any] struct {
+    generate func() K
+}
+
+func (p pure[K]) Generate() K { return p.generate() }
+
+// Pure is the most basic Gen type-class constructor, which returns a T generator given the generate function
+func Pure[T any](generator func() T) Gen[T] { return pure[T]{generator} }
+
 type only[T any] struct {
 	value T
 }
@@ -21,8 +30,8 @@ func Only[T any](value T) Gen[T] {
 }
 
 type oneOf[T any] struct {
-	choices    []T
-	numChoices int
+    choices    []T
+    numChoices int
 }
 
 func (o *oneOf[T]) Generate() T {

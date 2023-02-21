@@ -179,9 +179,9 @@ func BenchmarkComposition(b *testing.B) {
 	surnameChoices := []string{"Cole", "Dylan", "Chains", "Marry", "Holmes", "Black", "Geller", "UNKNOWN"}
 	age := 20
 
-	g := UsingGen(OneOf(nameChoices...), func(name string) Gen[TestPerson] {
-		return UsingGen(OneOf(surnameChoices...), func (surname string) Gen[TestPerson] {
-			return Using(Only(age), func(age int) TestPerson {
+	g := FlatMap(OneOf(nameChoices...), func(name string) Gen[TestPerson] {
+		return FlatMap(OneOf(surnameChoices...), func (surname string) Gen[TestPerson] {
+			return Map(Only(age), func(age int) TestPerson {
 				return TestPerson{name, surname, age}
 			})
 		})

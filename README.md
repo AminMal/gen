@@ -15,6 +15,14 @@ The logic behind generating depends on the structs/interfaces implementing this 
 
 Now let's take a look at its most common implementations, which already exist:
 
+## Pure ##
+`Pure` (the word comes from Applicatives in functional programming) is basically the basic lazy constructor for Generators, it takes the
+`Generate` function, and returns a generator for that type:
+```go
+intGen := gen.Pure(func() int { return rand.Intn(100) })
+ageGen := gen.Pure(func() int { return 0 })
+```
+
 ## Only ##
 `Only` is the most basic generator, as the name declares, it will only generate the value that it's given:
 ```go
@@ -211,18 +219,18 @@ var persons []Person = gen.GenerateN(personGen, 100) // a slice of 100 persons
 
 ## Benchmarks ##
 There are several benchmarks, some of them compare `gen.Gen` with `quick.Generator`, some of them compare different approaches to the same goal in gen, and there's also a pretty good coverage of default generators. You can take a look at `gen_test.go` for the implementations:
-```goos: darwin
+```
+goos: darwin
 goarch: arm64
-pkg: gen
-BenchmarkOnly/gen-only-8  	1000000000	         0.9516 ns/op	       0 B/op	       0 allocs/op
-BenchmarkOnly/quick-only-8         	300832020	         4.038 ns/op	       0 B/op	       0 allocs/op
-BenchmarkBetween/gen-between-8     	80103466	        14.34 ns/op	       8 B/op	       1 allocs/op
-BenchmarkBetween/quick-between-8   	84020374	        14.19 ns/op	       8 B/op	       0 allocs/op
-BenchmarkOneOf/gen-one-of-8        	958399785	         1.254 ns/op	       0 B/op	       0 allocs/op
-BenchmarkOneOf/quick-one-of-8      	74034469	        15.88 ns/op	       5 B/op	       0 allocs/op
-BenchmarkComposition/gen-composition-functional-8         	 7235749	       165.1 ns/op	     192 B/op	       6 allocs/op
-BenchmarkComposition/gen-infered-composition-8            	  603763	      1975 ns/op	    1699 B/op	     107 allocs/op
-BenchmarkComposition2/gen-composition-8                   	95466342	        12.61 ns/op	       0 B/op	       0 allocs/op
-BenchmarkComposition2/quick-composition-8                 	14833050	        81.80 ns/op	      80 B/op	       3 allocs/op
-
+pkg: github.com/AminMal/gen
+BenchmarkOnly/gen-only-8        1000000000               0.9404 ns/op
+BenchmarkOnly/quick-only-8              304303098                3.930 ns/op
+BenchmarkBetween/gen-between-8          74343877                14.32 ns/op
+BenchmarkBetween/quick-between-8        76853696                14.27 ns/op
+BenchmarkOneOf/gen-one-of-8             1000000000               0.9852 ns/op
+BenchmarkOneOf/quick-one-of-8           72698452                15.97 ns/op
+BenchmarkComposition/gen-composition-functional-8                7347558               161.2 ns/op
+BenchmarkComposition/gen-infered-composition-8                    577192              1986 ns/op
+BenchmarkComposition2/gen-composition-8                         90942105                12.81 ns/op
+BenchmarkComposition2/quick-composition-8                       14612331                81.50 ns/op
 ```

@@ -44,7 +44,7 @@ func TestComposedOnlyGenBeingOnly(t *testing.T) {
 
 	for _, person := range GenerateN(personGen, 100) {
 		if person != expected {
-			t.Errorf("lazyGen with `Only` as it's base generators did not produce the expected result. expected: %v, got: %v", expected, person)
+			t.Errorf("pure with `Only` as it's base generators did not produce the expected result. expected: %v, got: %v", expected, person)
 		}
 	}
 }
