@@ -20,7 +20,7 @@ Now let's take a look at its most common implementations, which already exist:
 `Generate` function, and returns a generator for that type:
 ```go
 intGen := gen.Pure(func() int { return rand.Intn(100) })
-ageGen := gen.Pure(func() int { return 0 })
+ageGen := gen.Pure(func() int { return 42 })
 ```
 
 ## Only ##
@@ -65,7 +65,8 @@ times := gen.GenerateN(timeGen, 10)
 ```
 
 ## Sequential ##
-`Sequential` is yet another generator, which can sequentially generate `Numeric` values, meaning that it holds an internal state of the current value. It's basically a `Range` data-type (sort of), and in case it exceeds the maximum amount of the range, it continues from the start:
+`Sequential` is yet another generator, which can sequentially generate `Numeric` values, meaning that it holds an internal state of the current value.
+It's basically a `Range` data-type (sort of), and in case it exceeds the maximum amount of the range, it continues from the start:
 ```go
 from := 1
 to := 100
@@ -133,17 +134,65 @@ Both of them would work, the first approach might take a little bit of coding an
 Note that the `Person` struct here is a simple struct, the case might be different in your codebase!
 
 ## Safe way to compose generators ##
-So given the `Person` struct as above, we can create the person generator as follows, with `UsingGen` and `Using` functions:
+So given the `Person` struct as above, we can create the person generator as follows, with `FlatMap` and `Map` functions:
 ```go
 nameGen := gen.OneOf("Bob", "April")
 ageGen := gen.Between(10, 90)
-personGen := gen.UsingGen(nameGen, func (name string) gen.Gen[Person] {
-    return gen.Using(ageGen, func (age int) Person {
+personGen := gen.FlatMap(nameGen, func (name string) gen.Gen[Person] {
+    return gen.Map(ageGen, func (age int) Person {
         return Person{name, age}
     })
 })
 ```
-That's all! Using this approach, you're manually designing the behavior of the generator, without creating a dedicated struct for it. `UsingGen` is basically the `bind` or `flatMap` (Monad) function in FP languages (if you're familiar with FP), while `Using` is basically the `Map` function (Functor). 
+That's all! Using this approach, you're manually designing the behavior of the generator, without creating a dedicated struct for it. `FlatMap` is basically the `bind` or `flatMap` (Monad) function in FP languages (if you're familiar with FP), while `Using` is basically the `Map` function (Functor).
+As the number of fields in the struct grow, it becomes harder to use `FlatMap` and `Map`, and it becomes slower.
+Luckily, there's another functional and safe alternative, which is incredibly faster, and easier to use.
+
+### MapN ###
+`MapN` functions basically abstract away the usage of `FlatMap`, and since there are less function calls, it's also faster.
+Given the `Programmer` struct below, you can compare both approaches in terms of readability.
+There are also benchmarks which demonstrate how faster this approach is rather than both `FlatMap`/`Map`,
+and using generator structs.
+```go
+type Programmer struct {
+    Name       string
+    Surname    string
+    GithubUrl  string
+    FavLang    string
+    Origin     string
+    Age        int
+    Experiance int
+}
+
+// Basic functional approach using FlatMap and Map
+var functional1 Gen[Programmer] = FlatMap(nameGen, func(name string) Gen[Programmer] {
+    return FlatMap(surnameGen, func(surname string) Gen[Programmer] {
+        return FlatMap(gitGen, func(git string) Gen[Programmer] {
+            return FlatMap(langGen, func(lang string) Gen[Programmer] {
+                return FlatMap(originGen, func(origin string) Gen[Programmer] {
+                    return FlatMap(ageGen, func(age int) Gen[Programmer] {
+                        return Map(experienceGen, func(experience int) Programmer {
+                            return Programmer{
+                                name, surname, git, lang, origin, age, experience,
+                            }
+                        })
+                    })
+                })
+            })
+        })
+    })
+})
+
+// More readable and faster functional approach using MapN
+var functional2 Gen[Programmer] = Map7(
+    nameGen, surnameGen, gitGen, langGen, originGen, ageGen, experienceGen,
+    func(name, surname, git, lang, origin string, age, experience int) Programmer {
+        return Programmer{name, surname, git, lang, origin, age, experience}
+    },
+)
+```
+As you can guess, the `N` in `MapN` denotes the number of generators you want to use. The types of variables used in the
+`compose` function must be respectively the same types as the given generators in order.
 
 ## Unsafe yet easy way to compose generators ##
 Given the same scenario above, you can provide the base generators, and use the `Infer` function:
@@ -179,8 +228,8 @@ In this case, because the `Infer` function relies on the types of the generators
 nameGen := gen.OneOf("Bob", "April")
 ageGen := gen.Between(10, 90)
 
-personGen := gen.UsingGen(nameGen, func (name string) gen.Gen[Person] {
-    return gen.Using(ageGen, func (age int) Person {
+personGen := gen.FlatMap(nameGen, func (name string) gen.Gen[Person] {
+    return gen.Map(ageGen, func (age int) Person {
         return Person{name, age, "Potter"}
     })
 })
@@ -223,14 +272,18 @@ There are several benchmarks, some of them compare `gen.Gen` with `quick.Generat
 goos: darwin
 goarch: arm64
 pkg: github.com/AminMal/gen
-BenchmarkOnly/gen-only-8        1000000000               0.9404 ns/op
-BenchmarkOnly/quick-only-8              304303098                3.930 ns/op
-BenchmarkBetween/gen-between-8          74343877                14.32 ns/op
-BenchmarkBetween/quick-between-8        76853696                14.27 ns/op
-BenchmarkOneOf/gen-one-of-8             1000000000               0.9852 ns/op
-BenchmarkOneOf/quick-one-of-8           72698452                15.97 ns/op
-BenchmarkComposition/gen-composition-functional-8                7347558               161.2 ns/op
-BenchmarkComposition/gen-infered-composition-8                    577192              1986 ns/op
-BenchmarkComposition2/gen-composition-8                         90942105                12.81 ns/op
-BenchmarkComposition2/quick-composition-8                       14612331                81.50 ns/op
+gen-only-8                                         1000000000               0.9521 ns/op
+quick-only-8                                        301776836                3.968 ns/op
+gen-between-8                                        79958463                14.37 ns/op
+quick-between-8                                      81586863                14.35 ns/op
+gen-one-of-8                                       1000000000               1.005 ns/op
+quick-one-of-8                                       73754053                15.98 ns/op
+gen-composition-functional-8                          7461547               162.5 ns/op
+gen-infered-composition-8                              588592              2006 ns/op
+gen-composition-8                                    95243446                12.80 ns/op
+quick-composition-8                                  12520965                91.13 ns/op
+gen-composition-7-fields-8                           29447280                43.28 ns/op
+gen-composition-map/flatmap-7-fields-8                2195730               543.0 ns/op
+gen-composition-mapN-7-fields-8                      20983605                56.79 ns/op
+quick-composition-7-fields-8                          7518525               159.6 ns/op
 ```
