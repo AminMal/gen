@@ -10,7 +10,7 @@ type Gen[T any] interface {
 }
 
 type pure[K any] struct {
-    generate func() K
+	generate func() K
 }
 
 func (p pure[K]) Generate() K { return p.generate() }
@@ -30,8 +30,8 @@ func Only[T any](value T) Gen[T] {
 }
 
 type oneOf[T any] struct {
-    choices    []T
-    numChoices int
+	choices    []T
+	numChoices int
 }
 
 func (o *oneOf[T]) Generate() T {

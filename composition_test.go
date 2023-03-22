@@ -20,8 +20,8 @@ func TestLazyGenBeingAnEffect(t *testing.T) {
 	var nameGen Gen[string] = genWithPanicSideEffect[string]{}
 	var ageGen Gen[int] = genWithPanicSideEffect[int]{}
 
-	_ = UsingGen(nameGen, func(name string) Gen[Person] {
-		return Using(ageGen, func(age int) Person {
+	_ = FlatMap(nameGen, func(name string) Gen[Person] {
+		return Map(ageGen, func(age int) Person {
 			return Person{name, age}
 		})
 	})
@@ -34,8 +34,8 @@ func TestComposedOnlyGenBeingOnly(t *testing.T) {
 	nameGen := Only("John")
 	ageGen := Only(42)
 
-	personGen := UsingGen(nameGen, func(name string) Gen[Person] {
-		return Using(ageGen, func(age int) Person {
+	personGen := FlatMap(nameGen, func(name string) Gen[Person] {
+		return Map(ageGen, func(age int) Person {
 			return Person{name, age}
 		})
 	})

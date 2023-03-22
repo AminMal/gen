@@ -110,7 +110,7 @@ type quickBetween[T Numeric] struct {
 // This is a much-simpler implementation of Between, so it makes sense if it can compete with gen's Between
 func (qb *quickBetween[T]) Generate(rand *rand.Rand, size int) reflect.Value {
 	return reflect.ValueOf(
-		rand.Intn(int(qb.end - qb.start)) + qb.start,
+		rand.Intn(int(qb.end-qb.start)) + qb.start,
 	)
 }
 
@@ -118,7 +118,7 @@ func BenchmarkBetween(b *testing.B) {
 
 	start := 1
 	end := 100000000
-	
+
 	g := Between(start, end)
 	var qb quick.Generator = &quickBetween[int]{start, end}
 
@@ -136,7 +136,7 @@ func BenchmarkBetween(b *testing.B) {
 }
 
 type quickOneOf[T any] struct {
-	slice []T
+	slice  []T
 	length int
 }
 
@@ -168,9 +168,9 @@ func BenchmarkOneOf(b *testing.B) {
 }
 
 type TestPerson struct {
-	Name 		string
-	Surname 	string
-	Age 		int
+	Name    string
+	Surname string
+	Age     int
 }
 
 func BenchmarkComposition(b *testing.B) {
@@ -180,7 +180,7 @@ func BenchmarkComposition(b *testing.B) {
 	age := 20
 
 	g := FlatMap(OneOf(nameChoices...), func(name string) Gen[TestPerson] {
-		return FlatMap(OneOf(surnameChoices...), func (surname string) Gen[TestPerson] {
+		return FlatMap(OneOf(surnameChoices...), func(surname string) Gen[TestPerson] {
 			return Map(Only(age), func(age int) TestPerson {
 				return TestPerson{name, surname, age}
 			})
@@ -188,7 +188,7 @@ func BenchmarkComposition(b *testing.B) {
 	})
 
 	inferedG, _ := Infer[TestPerson](Wrap(OneOf(nameChoices)), Wrap(Only(age)))
-	
+
 	b.Run("gen-composition-functional", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			g.Generate()
@@ -204,7 +204,7 @@ func BenchmarkComposition(b *testing.B) {
 
 type personGen struct {
 	nameGen, surnameGen Gen[string]
-	ageGen 	Gen[int]
+	ageGen              Gen[int]
 }
 
 func (pg *personGen) Generate() TestPerson {
@@ -240,4 +240,121 @@ func BenchmarkComposition2(b *testing.B) {
 			_ = qg.Generate(random, 50).Interface().(TestPerson)
 		}
 	})
+}
+
+type Programmer struct {
+	Name       string
+	Surname    string
+	GithubUrl  string
+	FavLang    string
+	Origin     string
+	Age        int
+	Experiance int
+}
+
+type programmerGen struct {
+	nameGen, surnameGen, gitGen, langGen, originGen Gen[string]
+	ageGen, experienceGen                           Gen[int]
+}
+
+func (pg *programmerGen) Generate() Programmer {
+	return Programmer{
+		pg.nameGen.Generate(),
+		pg.surnameGen.Generate(),
+		pg.gitGen.Generate(),
+		pg.langGen.Generate(),
+		pg.originGen.Generate(),
+		pg.ageGen.Generate(),
+		pg.experienceGen.Generate(),
+	}
+}
+
+type quickProgrammerGen struct {
+	nameGen, surnameGen, gitGen, langGen, originGen, ageGen, experienceGen quick.Generator
+}
+
+func (qpg quickProgrammerGen) Generate(rand *rand.Rand, size int) reflect.Value {
+	return reflect.ValueOf(
+		Programmer{
+			qpg.nameGen.Generate(random, 50).String(),
+			qpg.surnameGen.Generate(random, 50).String(),
+			qpg.gitGen.Generate(random, 50).String(),
+			qpg.langGen.Generate(random, 50).String(),
+			qpg.originGen.Generate(random, 50).String(),
+			int(qpg.ageGen.Generate(random, 50).Int()),
+			int(qpg.experienceGen.Generate(random, 50).Int()),
+		},
+	)
+}
+
+func BenchmarkCompositionMultipleFields(b *testing.B) {
+	nameGen := OneOf("John", "Jack", "Beth", "Anne", "Freddie", "Ross", "Rachel", "Tom")
+	surnameGen := OneOf("Smith", "Hart", "Lauren", "Marry", "Simpson", "Geller", "Hanks", "Mercury")
+	gitGen := Only("https://github.com/AminMal")
+	langGen := OneOf("Scala", "Rust", "Go", "Java", "Python")
+	originGen := OneOf("USA", "Iran", "Spain", "France")
+	ageGen := Between(16, 79)
+	experienceGen := Between(1, 8)
+
+	var directGen Gen[Programmer] = &programmerGen{nameGen, surnameGen, gitGen, langGen, originGen, ageGen, experienceGen}
+
+	qg := quickProgrammerGen{
+		nameGen:       &quickOneOf[string]{[]string{"John", "Jack", "Beth", "Anne", "Freddie", "Ross", "Rachel", "Tom"}, 8},
+		surnameGen:    &quickOneOf[string]{[]string{"Smith", "Hart", "Lauren", "Marry", "Simpson", "Geller", "Hanks", "Mercury"}, 8},
+		gitGen:        &quickOnly[string]{"https://github.com/AminMal"},
+		langGen:       &quickOneOf[string]{[]string{"Scala", "Rust", "Go", "Java", "Python"}, 5},
+		originGen:     &quickOneOf[string]{[]string{"USA", "Iran", "Spain", "France"}, 4},
+		ageGen:        &quickBetween[int]{16, 79},
+		experienceGen: &quickBetween[int]{1, 8},
+	}
+
+	var functional1 Gen[Programmer] = FlatMap(nameGen, func(name string) Gen[Programmer] {
+		return FlatMap(surnameGen, func(surname string) Gen[Programmer] {
+			return FlatMap(gitGen, func(git string) Gen[Programmer] {
+				return FlatMap(langGen, func(lang string) Gen[Programmer] {
+					return FlatMap(originGen, func(origin string) Gen[Programmer] {
+						return FlatMap(ageGen, func(age int) Gen[Programmer] {
+							return Map(experienceGen, func(experience int) Programmer {
+								return Programmer{
+									name, surname, git, lang, origin, age, experience,
+								}
+							})
+						})
+					})
+				})
+			})
+		})
+	})
+
+	var functional2 Gen[Programmer] = Map7(
+		nameGen, surnameGen, gitGen, langGen, originGen, ageGen, experienceGen,
+		func(name, surname, git, lang, origin string, age, experience int) Programmer {
+			return Programmer{name, surname, git, lang, origin, age, experience}
+		},
+	)
+
+	b.Run("gen-composition-7-fields", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			directGen.Generate()
+		}
+	})
+
+	b.Run("gen-composition-map/flatmap-7-fields", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			functional1.Generate()
+		}
+	})
+
+	b.Run("gen-composition-mapN-7-fields", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			functional2.Generate()
+		}
+	})
+
+	b.Run("quick-composition-7-fields", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_ = qg.Generate(random, 50).Interface().(Programmer)
+		}
+	})
+
 }
