@@ -164,6 +164,14 @@ type Programmer struct {
     Experiance int
 }
 
+// More readable and faster functional approach using MapN
+var functional2 Gen[Programmer] = Map7(
+    nameGen, surnameGen, gitGen, langGen, originGen, ageGen, experienceGen,
+    func(name, surname, git, lang, origin string, age, experience int) Programmer {
+        return Programmer{name, surname, git, lang, origin, age, experience}
+    },
+)
+
 // Basic functional approach using FlatMap and Map
 var functional1 Gen[Programmer] = FlatMap(nameGen, func(name string) Gen[Programmer] {
     return FlatMap(surnameGen, func(surname string) Gen[Programmer] {
@@ -182,14 +190,6 @@ var functional1 Gen[Programmer] = FlatMap(nameGen, func(name string) Gen[Program
         })
     })
 })
-
-// More readable and faster functional approach using MapN
-var functional2 Gen[Programmer] = Map7(
-    nameGen, surnameGen, gitGen, langGen, originGen, ageGen, experienceGen,
-    func(name, surname, git, lang, origin string, age, experience int) Programmer {
-        return Programmer{name, surname, git, lang, origin, age, experience}
-    },
-)
 ```
 As you can guess, the `N` in `MapN` denotes the number of generators you want to use. The types of variables used in the
 `compose` function must be respectively the same types as the given generators in order.
