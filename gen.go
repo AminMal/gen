@@ -1,6 +1,9 @@
 package gen
 
-import "fmt"
+import (
+	"fmt"
+	"math/rand/v2"
+)
 
 // Gen describes how to generate a value of a specific type `T`.
 // The behavior of the Gen only depends on the structs implementing it.
@@ -35,7 +38,7 @@ type oneOf[T any] struct {
 }
 
 func (o *oneOf[T]) Generate() T {
-	return o.choices[random.Intn(o.numChoices)]
+	return o.choices[rand.IntN(o.numChoices)]
 }
 
 // OneOf picks out a value among those values that it's given.
@@ -52,7 +55,6 @@ type between[T Numeric] struct {
 }
 
 func (r *between[T]) Generate() T {
-	// todo, the below line causes subtraction overflow, fix it
 	switch diff := any(r.max - r.min).(type) {
 	case uint8:
 		return T(randUint8(diff) + uint8(r.min))

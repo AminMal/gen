@@ -42,13 +42,13 @@ var ArbitraryRune Gen[rune] = ArbitraryInt32
 // ------ string ------
 
 type stringGen struct {
-	alphabet             []rune
-	minLength, maxLength int
+	lengthGen Gen[int]
+	runeGen   Gen[rune]
 }
 
 func (s *stringGen) Generate() string {
-	strlen := Between(s.minLength, s.maxLength).Generate()
-	rs := GenerateN(OneOf(s.alphabet...), uint(strlen))
+	strlen := s.lengthGen.Generate()
+	rs := GenerateN(s.runeGen, uint(strlen))
 	return string(rs)
 }
 
@@ -57,5 +57,8 @@ func StringGen(alphabet string, minLength uint, maxLength uint) Gen[string] {
 	actualMin := numericMin(minLength, maxLength)
 	actualMax := numericMax(minLength, maxLength)
 
-	return &stringGen{[]rune(alphabet), int(actualMin), int(actualMax)}
+	return &stringGen{
+		lengthGen: Between(int(actualMin), int(actualMax)),
+		runeGen:   OneOf([]rune(alphabet)...),
+	}
 }

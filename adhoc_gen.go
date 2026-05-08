@@ -2,7 +2,7 @@ package gen
 
 import (
 	"fmt"
-	"math/rand"
+	"math/rand/v2"
 	"reflect"
 	"strings"
 )
@@ -86,7 +86,7 @@ func sizedValue(t reflect.Type, size int) (value reflect.Value, ok bool) {
 			v.Index(i).Set(elem)
 		}
 	case reflect.String:
-		numChars := rand.Intn(complexSize)
+		numChars := rand.IntN(complexSize)
 		codePoints := make([]rune, numChars)
 		for i := 0; i < numChars; i++ {
 			codePoints[i] = rune(Between(0, 0x10ffff).Generate())

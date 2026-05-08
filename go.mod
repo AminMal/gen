@@ -1,3 +1,3 @@
 module github.com/AminMal/gen
 
-go 1.18
+go 1.22

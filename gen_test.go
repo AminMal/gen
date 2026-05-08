@@ -1,11 +1,15 @@
 package gen
 
 import (
+	"math"
 	"math/rand"
 	"reflect"
+	"sync"
 	"testing"
 	"testing/quick"
 )
+
+var testRand = rand.New(rand.NewSource(42))
 
 func TestOnly(t *testing.T) {
 	expected := 2
@@ -98,7 +102,7 @@ func BenchmarkOnly(b *testing.B) {
 
 	b.Run("quick-only", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			qo.Generate(random, 50).Int()
+			qo.Generate(testRand, 50).Int()
 		}
 	})
 }
@@ -130,7 +134,7 @@ func BenchmarkBetween(b *testing.B) {
 
 	b.Run("quick-between", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			qb.Generate(random, 50).Int()
+			qb.Generate(testRand, 50).Int()
 		}
 	})
 }
@@ -162,7 +166,7 @@ func BenchmarkOneOf(b *testing.B) {
 
 	b.Run("quick-one-of", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			qo.Generate(random, 50).Int()
+			qo.Generate(testRand, 50).Int()
 		}
 	})
 }
@@ -217,7 +221,7 @@ type quickPersonGen struct {
 
 func (qpg quickPersonGen) Generate(rand *rand.Rand, size int) reflect.Value {
 	return reflect.ValueOf(
-		TestPerson{qpg.nameGen.Generate(random, 50).String(), qpg.surnameGen.Generate(random, 50).String(), int(qpg.ageGen.Generate(random, 50).Int())},
+		TestPerson{qpg.nameGen.Generate(testRand, 50).String(), qpg.surnameGen.Generate(testRand, 50).String(), int(qpg.ageGen.Generate(testRand, 50).Int())},
 	)
 }
 
@@ -237,7 +241,7 @@ func BenchmarkComposition2(b *testing.B) {
 
 	b.Run("quick-composition", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			_ = qg.Generate(random, 50).Interface().(TestPerson)
+			_ = qg.Generate(testRand, 50).Interface().(TestPerson)
 		}
 	})
 }
@@ -276,13 +280,13 @@ type quickProgrammerGen struct {
 func (qpg quickProgrammerGen) Generate(rand *rand.Rand, size int) reflect.Value {
 	return reflect.ValueOf(
 		Programmer{
-			qpg.nameGen.Generate(random, 50).String(),
-			qpg.surnameGen.Generate(random, 50).String(),
-			qpg.gitGen.Generate(random, 50).String(),
-			qpg.langGen.Generate(random, 50).String(),
-			qpg.originGen.Generate(random, 50).String(),
-			int(qpg.ageGen.Generate(random, 50).Int()),
-			int(qpg.experienceGen.Generate(random, 50).Int()),
+			qpg.nameGen.Generate(testRand, 50).String(),
+			qpg.surnameGen.Generate(testRand, 50).String(),
+			qpg.gitGen.Generate(testRand, 50).String(),
+			qpg.langGen.Generate(testRand, 50).String(),
+			qpg.originGen.Generate(testRand, 50).String(),
+			int(qpg.ageGen.Generate(testRand, 50).Int()),
+			int(qpg.experienceGen.Generate(testRand, 50).Int()),
 		},
 	)
 }
@@ -353,8 +357,71 @@ func BenchmarkCompositionMultipleFields(b *testing.B) {
 
 	b.Run("quick-composition-7-fields", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			_ = qg.Generate(random, 50).Interface().(Programmer)
+			_ = qg.Generate(testRand, 50).Interface().(Programmer)
 		}
 	})
 
+}
+
+func TestBetweenUint8FullRange(t *testing.T) {
+	g := Between(uint8(0), uint8(255))
+	seen := make(map[uint8]bool)
+	for i := 0; i < 10000; i++ {
+		seen[g.Generate()] = true
+	}
+	if !seen[0] {
+		t.Error("Between(uint8(0), 255) never generated 0")
+	}
+	if !seen[255] {
+		t.Error("Between(uint8(0), 255) never generated 255")
+	}
+}
+
+func TestBetweenUint32FullRange(t *testing.T) {
+	g := Between(uint32(0), uint32(math.MaxUint32))
+	for i := 0; i < 1000; i++ {
+		g.Generate()
+	}
+}
+
+func TestBetweenUint64FullRange(t *testing.T) {
+	g := Between(uint64(0), uint64(math.MaxUint64))
+	for i := 0; i < 1000; i++ {
+		g.Generate()
+	}
+}
+
+func TestConcurrentGenerate(t *testing.T) {
+	g := Between(0, 1000000)
+	var wg sync.WaitGroup
+	for i := 0; i < 100; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for j := 0; j < 1000; j++ {
+				g.Generate()
+			}
+		}()
+	}
+	wg.Wait()
+}
+
+func TestStringGenProperties(t *testing.T) {
+	alphabet := "abc123"
+	g := StringGen(alphabet, 5, 10)
+	allowed := map[rune]bool{}
+	for _, r := range alphabet {
+		allowed[r] = true
+	}
+	for i := 0; i < 1000; i++ {
+		s := g.Generate()
+		if len(s) < 5 || len(s) > 10 {
+			t.Fatalf("StringGen produced string of length %d, want [5, 10]", len(s))
+		}
+		for _, r := range s {
+			if !allowed[r] {
+				t.Fatalf("StringGen produced rune %q not in alphabet", r)
+			}
+		}
+	}
 }
